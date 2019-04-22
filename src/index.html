@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script type="text/javascript" src="treasure.js"></script>
+    <script type="text/javascript" src="trap.js"></script>
+    <link  rel = "stylesheet" type = "text/css" href="indexCSS.css">  
+    <title>Treasure Hunt</title>
+</head>
+<body>
+    <canvas id = "gameBoard" width = 500 height = 500 onmousemove="tellMousePos(event)"></canvas>
+    <div id = "scoreBoard">Score:</div>
+    <div id = "mainMenu">
+        <p id = "play" onclick="gameLoop()">Play</p>
+        <p id = "options" onclick = "document.getElementById('optionMenu').style.visibility = 'visible'">Options</p>
+        <p id = "how to play" onclick = "document.getElementById('explainGame').style.visibility = 'visible'">How To Play</p>
+    </div>
+    <div id = "gameOver">Game Over
+        <p id = "tryAgain" onclick="window.location.reload()">Try Again</p>
+        <p id = "finalScore"></p>
+    </div>
+    <div id = "optionMenu">
+        <p>Timer Speed</p>
+        <input type = "range" min = "1" max = "3000" value = "2000" class = "slider" id = "timerSpeed">
+        <p>Treasures At a Time</p>
+        <p id = "treasureAmount">
+            <p id = "1Treasure" class = "treasureButton" onclick="treasureAmount(1)">1</p>
+            <p id = "2Treasure" class = "treasureButton" onclick="treasureAmount(2)">2</p>
+            <p id = "3Treasure" class = "treasureButton" onclick="treasureAmount(3)">3</p>
+            <p id = "4Treasure" class = "treasureButton" onclick="treasureAmount(4)">4</p>
+        </p>
+        <p>Timer</p>
+        <p id = "timerCount">
+            <p id = "timerMinus10" class = "timerButton" onclick="changeTimer(-10)">-10</p>
+            <p id = "timerPlus10" class = "timerButton" onclick="changeTimer(10)">+10</p>
+        </p>
+        <p id = "back" onclick = "document.getElementById('optionMenu').style.visibility = 'hidden'">
+            <img src="back.png" width="25px" height="25px">
+        </p>
+    </div>
+    <div id = "explainGame">
+        <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbspThis is Treasure Hunt! A game where you need to collect as many treasures as possible before the time runs out!</p>
+        <img src="treasure.png" class = "TImage">
+        <p class = "TreasureExplanation1">This treasure worths 1 point.</p>
+        <img src = "shinyTreasure.png"  width = "50px" height = "50px" class = "TImage">
+        <p class = "TreasureExplanation2">This treasure worths 5 points.</p>
+        <p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbspMove your mouse over these treasures to get the points, but be careful, if you hit a trap, you die!</p>
+        <p id = "back" onclick = "document.getElementById('explainGame').style.visibility = 'hidden'">
+            <img src="back.png" width="25px" height="25px">
+        </p>
+    </div>
+    <script>
+        var notGameover = true;
+        var score = 0;
+        var countdown = 10;
+        var slider = document.getElementById("timerSpeed");
+        document.getElementById("scoreBoard").innerHTML = "--Score: " + score + "--" + "Timer: " + countdown;
+        var treasures = [ new Treasure()];
+        var traps = [ new Trap()];
+        var timerSpeed = slider.value;
+
+        function gameLoop() {
+            document.getElementById("mainMenu").style.visibility = "hidden";
+            document.getElementById("gameBoard").style.backgroundColor = "aqua";
+            for ( var i = 0; i < treasures.length; i++)
+            {
+                treasures[i].spawnTreasure();
+                treasures[i].showTreasure();
+                traps[i].spawnTrap();
+                traps[i].showTrap();
+            }
+            setInterval(countdownTimer, 3000 - timerSpeed);
+        }
+        
+
+        function tellMousePos(event) {
+            if ( notGameover) {
+                for ( var i = 0; i < treasures.length; i++)
+                {
+                    if ( traps[i].checkTrap((event.pageX - 3), (event.pageY - 4))) {
+                        countdown = 0;
+                        countdownTimer();
+                    }
+                    if ( treasures[i].checkTreasure((event.pageX - 3), (event.pageY - 4))) {
+                        if ( treasures[i].specialTreasure) {    
+                            score += 5;
+                        }
+                        else
+                        {
+                            score++;
+                        }
+                        document.getElementById("scoreBoard").innerHTML = "--Score: " + score + "--" + "Timer: " + countdown;
+                        treasures[i].deleteTreasure();
+                        treasures[i].spawnTreasure();
+                        treasures[i].showTreasure();
+                        traps[i].deleteTrap();
+                        traps[i].spawnTrap();
+                        traps[i].showTrap();
+                    }
+                }
+            }
+        }
+
+        function countdownTimer() {
+            document.getElementById("scoreBoard").innerHTML = "--Score: " + score + "--" + "Timer: " + countdown;
+            if ( countdown == 0)
+            {
+                for ( var i = 0; i < treasures.length; i++)
+                {
+                    treasures[i].deleteTreasure();
+                    traps[i].deleteTrap();
+                }
+                notGameover = false;
+                document.getElementById("scoreBoard").style.visibility = "hidden";
+                document.getElementById("finalScore").innerHTML = "Score: " + score;
+                document.getElementById("gameOver").style.visibility = "visible";
+            }
+            else if ( countdown > 0)
+            {
+                countdown--;
+            }
+        }
+
+        slider.oninput = function() {
+            timerSpeed = this.value;
+        }
+
+        function treasureAmount(treasureSize)
+        {
+            treasures = [];
+            traps = [];
+            for ( var i = 0; i < treasureSize; i++)
+            {
+                treasures.push(new Treasure());
+                traps.push(new Trap());
+            }
+        }
+
+        function changeTimer(value)
+        {
+            if ( (countdown > 10 && value < 0) ||(countdown < 100 && value > 0) )
+            {
+                countdown += value;
+            }
+            document.getElementById("scoreBoard").innerHTML = "--Score: " + score + "--" + "Timer: " + countdown;
+        }
+    </script>
+</body>
+</html>
